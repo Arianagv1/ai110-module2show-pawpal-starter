@@ -1,295 +1,184 @@
 from __future__ import annotations
-from dataclasses import dataclass
 from datetime import date, time
 
 
 # ---------------------------------------------------------------------------
-# Data classes — simple value objects used across the system
+# Task — represents a single pet care activity
 # ---------------------------------------------------------------------------
 
-@dataclass
-class Pet:
-    pet_id: str
-    name: str
-    species: str
-    breed: str
-    date_of_birth: date
-    weight: float
-    health_status: str
+class Task:
+    """Represents a single pet care activity."""
 
-    def get_pet_info(self) -> "Pet":
-        pass
+    def __init__(
+        self,
+        task_id: str,
+        description: str,
+        time: time,
+        frequency: str,
+        completed: bool = False,
+    ):
+        self.task_id = task_id
+        self.description = description
+        self.time = time
+        self.frequency = frequency
+        self.completed = completed
+
+    def mark_complete(self) -> None:
+        self.completed = True
+
+    def mark_incomplete(self) -> None:
+        self.completed = False
+
+    def is_due_today(self) -> bool:
+        """Return True for daily tasks or any task scheduled for today."""
+        return self.frequency.lower() == "daily"
+
+    def get_task_info(self) -> dict:
+        return {
+            "task_id": self.task_id,
+            "description": self.description,
+            "time": self.time,
+            "frequency": self.frequency,
+            "completed": self.completed,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Pet — stores pet details and a list of tasks
+# ---------------------------------------------------------------------------
+
+class Pet:
+    """Stores pet details and manages a list of Tasks."""
+
+    def __init__(
+        self,
+        pet_id: str,
+        name: str,
+        species: str,
+        breed: str,
+        date_of_birth: date,
+        weight: float,
+        health_status: str,
+    ):
+        self.pet_id = pet_id
+        self.name = name
+        self.species = species
+        self.breed = breed
+        self.date_of_birth = date_of_birth
+        self.weight = weight
+        self.health_status = health_status
+        self.tasks: list[Task] = []
+
+    def add_task(self, task: Task) -> None:
+        self.tasks.append(task)
+
+    def remove_task(self, task_id: str) -> None:
+        self.tasks = [t for t in self.tasks if t.task_id != task_id]
+
+    def get_tasks(self) -> list[Task]:
+        return self.tasks
+
+    def get_pending_tasks(self) -> list[Task]:
+        return [t for t in self.tasks if not t.completed]
+
+    def get_pet_info(self) -> dict:
+        return {
+            "pet_id": self.pet_id,
+            "name": self.name,
+            "species": self.species,
+            "breed": self.breed,
+            "date_of_birth": self.date_of_birth,
+            "weight": self.weight,
+            "health_status": self.health_status,
+        }
 
     def update_pet_info(self) -> None:
         pass
 
-    def delete_pet(self) -> None:
-        pass
 
+# ---------------------------------------------------------------------------
+# Owner — manages multiple pets and provides access to all their tasks
+# ---------------------------------------------------------------------------
 
-@dataclass
-class User:
-    user_id: str
-    name: str
-    email: str
+class Owner:
+    """Manages multiple pets and provides access to all their tasks."""
 
-    def create_account(self) -> None:
-        pass
+    def __init__(
+        self,
+        owner_id: str,
+        name: str,
+        email: str,
+    ):
+        self.owner_id = owner_id
+        self.name = name
+        self.email = email
+        self.pets: list[Pet] = []
+
+    def add_pet(self, pet: Pet) -> None:
+        self.pets.append(pet)
+
+    def remove_pet(self, pet_id: str) -> None:
+        self.pets = [p for p in self.pets if p.pet_id != pet_id]
+
+    def get_pets(self) -> list[Pet]:
+        return self.pets
+
+    def get_pet_by_id(self, pet_id: str) -> Pet | None:
+        for pet in self.pets:
+            if pet.pet_id == pet_id:
+                return pet
+        return None
+
+    def get_all_tasks(self) -> list[Task]:
+        """Return every task across all pets owned by this owner."""
+        return [task for pet in self.pets for task in pet.tasks]
 
     def update_profile(self) -> None:
         pass
 
-    def delete_account(self) -> None:
-        pass
-
-    def get_notifications(self) -> None:
-        pass
-
 
 # ---------------------------------------------------------------------------
-# Core activity classes
+# Scheduler — the 'brain' that retrieves, organizes, and manages tasks
 # ---------------------------------------------------------------------------
 
-class Medications:
-    def __init__(
-        self,
-        medication_id: str,
-        med_name: str,
-        dosage: str,
-        frequency: str,
-        start_date: date,
-        end_date: date,
-        refill_date: date,
-    ):
-        self.medication_id = medication_id
-        self.med_name = med_name
-        self.dosage = dosage
-        self.frequency = frequency
-        self.start_date = start_date
-        self.end_date = end_date
-        self.refill_date = refill_date
+class Scheduler:
+    """Retrieves, organizes, and manages tasks across an owner's pets."""
 
-    def which_med(self) -> str:
-        pass
+    def __init__(self, owner: Owner):
+        self.owner = owner
 
-    def when_med(self) -> date:
-        pass
+    def get_all_tasks(self) -> list[Task]:
+        """Delegate to Owner to retrieve every task across all pets."""
+        return self.owner.get_all_tasks()
 
-    def which_pet_med(self) -> Pet:
-        pass
+    def get_tasks_for_pet(self, pet_id: str) -> list[Task]:
+        pet = self.owner.get_pet_by_id(pet_id)
+        return pet.get_tasks() if pet else []
 
-    def did_get_med(self) -> bool:
-        pass
+    def get_pending_tasks(self) -> list[Task]:
+        return [t for t in self.get_all_tasks() if not t.completed]
 
-    def log_medication_given(self) -> None:
-        pass
+    def get_completed_tasks(self) -> list[Task]:
+        return [t for t in self.get_all_tasks() if t.completed]
 
-    def set_reminder(self) -> None:
-        pass
+    def get_tasks_by_frequency(self, frequency: str) -> list[Task]:
+        return [t for t in self.get_all_tasks() if t.frequency.lower() == frequency.lower()]
 
+    def get_todays_schedule(self) -> list[Task]:
+        return [t for t in self.get_all_tasks() if t.is_due_today()]
 
-class Walks:
-    def __init__(
-        self,
-        walk_id: str,
-        date: date,
-        time: time,
-        duration: int,
-        distance: float,
-        location: str,
-    ):
-        self.walk_id = walk_id
-        self.date = date
-        self.time = time
-        self.duration = duration
-        self.distance = distance
-        self.location = location
+    def organize_by_time(self) -> list[Task]:
+        return sorted(self.get_all_tasks(), key=lambda t: t.time)
 
-    def when_walk(self) -> date:
-        pass
+    def mark_task_complete(self, task_id: str) -> None:
+        for task in self.get_all_tasks():
+            if task.task_id == task_id:
+                task.mark_complete()
+                return
 
-    def where_walk(self) -> str:
-        pass
-
-    def did_walk(self) -> bool:
-        pass
-
-    def which_pet(self) -> Pet:
-        pass
-
-    def walk_duration(self) -> int:
-        pass
-
-    def walk_distance(self) -> float:
-        pass
-
-    def log_walk(self) -> None:
-        pass
-
-    def track_route(self) -> None:
-        pass
-
-
-class Feedings:
-    def __init__(
-        self,
-        feeding_id: str,
-        feed_type: str,
-        brand: str,
-        portion_size: float,
-        time: time,
-        date: date,
-    ):
-        self.feeding_id = feeding_id
-        self.feed_type = feed_type
-        self.brand = brand
-        self.portion_size = portion_size
-        self.time = time
-        self.date = date
-
-    def did_feed(self) -> bool:
-        pass
-
-    def which_feed(self) -> str:
-        pass
-
-    def which_pet(self) -> Pet:
-        pass
-
-    def did_pet_eat(self) -> bool:
-        pass
-
-    def feeding_time(self) -> time:
-        pass
-
-    def log_feeding(self) -> None:
-        pass
-
-    def track_nutrition(self) -> None:
-        pass
-
-
-class Appointments:
-    def __init__(
-        self,
-        appointment_id: str,
-        date: date,
-        time: time,
-        location: str,
-        vet_name: str,
-        reason: str,
-        notes: str,
-        next_appt_date: date,
-    ):
-        self.appointment_id = appointment_id
-        self.date = date
-        self.time = time
-        self.location = location
-        self.vet_name = vet_name
-        self.reason = reason
-        self.notes = notes
-        self.next_appt_date = next_appt_date
-
-    def did_go(self) -> bool:
-        pass
-
-    def where_appt(self) -> str:
-        pass
-
-    def when_appt(self) -> date:
-        pass
-
-    def reason_appt(self) -> str:
-        pass
-
-    def which_pet(self) -> Pet:
-        pass
-
-    def get_vet_name(self) -> str:
-        pass
-
-    def appt_notes(self) -> str:
-        pass
-
-    def next_appt(self) -> date:
-        pass
-
-    def schedule_appointment(self) -> None:
-        pass
-
-    def set_reminder(self) -> None:
-        pass
-
-    def update_notes(self) -> None:
-        pass
-
-
-# ---------------------------------------------------------------------------
-# Supporting classes
-# ---------------------------------------------------------------------------
-
-class HealthRecord:
-    def __init__(
-        self,
-        record_id: str,
-        date: date,
-        record_type: str,
-        details: str,
-        created_date: date,
-    ):
-        self.record_id = record_id
-        self.date = date
-        self.record_type = record_type
-        self.details = details
-        self.created_date = created_date
-
-    def get_health_history(self) -> list["HealthRecord"]:
-        pass
-
-    def add_health_record(self) -> None:
-        pass
-
-    def generate_report(self) -> None:
-        pass
-
-
-class Reminder:
-    def __init__(
-        self,
-        reminder_id: str,
-        type: str,
-        time: time,
-        frequency: str,
-        is_active: bool,
-    ):
-        self.reminder_id = reminder_id
-        self.type = type
-        self.time = time
-        self.frequency = frequency
-        self.is_active = is_active
-
-    def create_reminder(self) -> None:
-        pass
-
-    def delete_reminder(self) -> None:
-        pass
-
-    def send_notification(self) -> None:
-        pass
-
-
-class Dashboard:
-    def get_upcoming_reminders(self) -> list[Reminder]:
-        pass
-
-    def get_todays_tasks(self) -> None:
-        pass
-
-    def get_health_summary(self) -> None:
-        pass
-
-    def get_activity_summary(self) -> None:
-        pass
-
-    def display_weekly_report(self) -> None:
-        pass
+    def generate_daily_plan(self) -> list[Task]:
+        """Return today's pending tasks sorted by scheduled time."""
+        return sorted(
+            [t for t in self.get_todays_schedule() if not t.completed],
+            key=lambda t: t.time,
+        )
