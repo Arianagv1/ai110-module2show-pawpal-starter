@@ -5,12 +5,21 @@
 **a. Initial design**
 
 - Briefly describe your initial UML design.
+There are three core actions a user should be able to perform: seeing today's daily plan, adding pets, and scheduling medications or grooming appointments. 
+
+
 - What classes did you include, and what responsibilities did you assign to each?
+
+The first class I designed is called Pet. It should describe the pet's necessary details like name, species, breed, and update/deleting methods. The next class I designed is called User. The owner can create their account login/contact details, along with methods to get their pet's info and notifications. The next class I designed is called Medications. This class is in charge of recording specific frequencies, dosages, reminders, and which pets received their medications. The next class I implemented is called Walks. This class will help owners track the durations, distances, locations, and dates for when they've walked their pets. The next important class I designed is called Feedings. This class should track the brand of food, the dates/logs of feeding times, and which pet(s) ate what food. The next important class I implemented is called appointments. This class tracked the reasons for visits, locations and dates, and necessary appointment reminders. In addition, I also designed the class HealthRecord, so that Owners can easily get a report on their pet's health. Finally, I decided to make the app more robust by adding a Reminder and Dashboard class, which will help with notifications for walks/feeds, etc and for owners to get a clear display of their todo tasks for ease of access.
+
 
 **b. Design changes**
 
 - Did your design change during implementation?
+Yes
+
 - If yes, describe at least one change and why you made it.
+Copilot analyzed that there are missing relationships between certain classes. To begin with, the Pet class should be represeted in Activity classes, so a missing pet_id attribute is needed for the constructor (examples: dashboard, reminders, healthRecord). Next, the User class needs to be accountable for their Pet class, which could break accountability and multi-user support. 
 
 ---
 
