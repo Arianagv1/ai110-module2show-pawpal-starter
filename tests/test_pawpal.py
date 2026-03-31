@@ -151,3 +151,104 @@ def test_detect_conflicts_returns_list_of_strings():
     result = scheduler.detect_conflicts()
     assert isinstance(result, list)
     assert result == []
+
+
+# ---------------------------------------------------------------------------
+# filter_tasks tests
+# ---------------------------------------------------------------------------
+def _make_filter_scheduler() -> Scheduler:
+    """Return a Scheduler with two pets, each holding one complete and one pending task."""
+    owner = Owner("o1", "Test Owner", "owner@example.com")
+
+    daisy = Pet("p1", "Daisy", "dog", "Shih Tzu", date(2020, 3, 15), 10.5, "healthy")
+    daisy.add_task(Task("d1", "Morning walk",   time(7,  0), "daily"))   # pending
+    daisy.add_task(Task("d2", "Evening walk",   time(18, 0), "daily"))   # will be completed
+
+    dolly = Pet("p2", "Dolly", "cat", "Tabby", date(2019, 7, 4), 4.2, "healthy")
+    dolly.add_task(Task("c1", "Feed breakfast", time(8,  0), "daily"))   # pending
+    dolly.add_task(Task("c2", "Brush fur",      time(17, 0), "weekly"))  # will be completed
+
+    daisy.get_tasks()[1].mark_complete()   # d2 → completed
+    dolly.get_tasks()[1].mark_complete()   # c2 → completed
+
+    owner.add_pet(daisy)
+    owner.add_pet(dolly)
+    return Scheduler(owner)
+
+
+def test_filter_tasks_no_filters_returns_all():
+    """filter_tasks() with no arguments should return every task across all pets."""
+    scheduler = _make_filter_scheduler()
+    result = scheduler.filter_tasks()
+    assert len(result) == 4
+
+
+def test_filter_tasks_completed_true():
+    """filter_tasks(completed=True) should return only completed tasks."""
+    scheduler = _make_filter_scheduler()
+    result = scheduler.filter_tasks(completed=True)
+    assert len(result) == 2
+    assert all(t.completed is True for t in result)
+
+
+def test_filter_tasks_completed_false():
+    """filter_tasks(completed=False) should return only pending tasks."""
+    scheduler = _make_filter_scheduler()
+    result = scheduler.filter_tasks(completed=False)
+    assert len(result) == 2
+    assert all(t.completed is False for t in result)
+
+
+def test_filter_tasks_by_pet_name():
+    """filter_tasks(pet_name=...) should return only tasks for that pet."""
+    scheduler = _make_filter_scheduler()
+    result = scheduler.filter_tasks(pet_name="Daisy")
+    assert len(result) == 2
+    assert all(t.task_id.startswith("d") for t in result)
+
+
+def test_filter_tasks_by_pet_name_case_insensitive():
+    """pet_name matching should be case-insensitive."""
+    scheduler = _make_filter_scheduler()
+    assert scheduler.filter_tasks(pet_name="daisy") == scheduler.filter_tasks(pet_name="Daisy")
+
+
+def test_filter_tasks_combined_completed_and_pet_name():
+    """filter_tasks(completed=True, pet_name=...) should apply both filters."""
+    scheduler = _make_filter_scheduler()
+    result = scheduler.filter_tasks(completed=True, pet_name="Daisy")
+    assert len(result) == 1
+    assert result[0].task_id == "d2"
+
+
+def test_filter_tasks_unknown_pet_name_returns_empty():
+    """filter_tasks() with a pet name that doesn't exist should return an empty list."""
+    scheduler = _make_filter_scheduler()
+    result = scheduler.filter_tasks(pet_name="Ghost")
+    assert result == []
+
+
+# ---------------------------------------------------------------------------
+# Edge-case tests for mark_task_complete and get_pet_by_id
+# ---------------------------------------------------------------------------
+def test_mark_task_complete_unknown_id_does_nothing():
+    """mark_task_complete() with a non-existent task_id should not raise or alter state."""
+    scheduler, pet, _ = _make_scheduler("daily")
+    original_count = len(pet.get_tasks())
+    scheduler.mark_task_complete("does_not_exist")
+    assert len(pet.get_tasks()) == original_count  # no new task appended
+
+
+def test_get_pet_by_id_returns_none_for_missing_id():
+    """get_pet_by_id() should return None when no pet matches the given id."""
+    owner = Owner("o1", "Test Owner", "owner@example.com")
+    owner.add_pet(Pet("p1", "Daisy", "dog", "Shih Tzu", date(2020, 3, 15), 10.5, "healthy"))
+    assert owner.get_pet_by_id("does_not_exist") is None
+
+
+def test_get_pet_by_id_returns_correct_pet():
+    """get_pet_by_id() should return the matching Pet object."""
+    owner = Owner("o1", "Test Owner", "owner@example.com")
+    pet = Pet("p1", "Daisy", "dog", "Shih Tzu", date(2020, 3, 15), 10.5, "healthy")
+    owner.add_pet(pet)
+    assert owner.get_pet_by_id("p1") is pet

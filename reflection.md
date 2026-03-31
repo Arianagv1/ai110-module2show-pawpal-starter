@@ -62,12 +62,18 @@ My schedular currently uses a linear search for every task lookup. For a robust 
 **a. What you tested**
 
 - What behaviors did you test?
+My first test began to make sure that mark_complete() actually changes the task's status. The next test was to verify that adding a task to a Pet increases the pet's task count. The next test was to make sure that the schedular appropriately handles recurring tasks. The following test was also related to schedular, and verified that tasks with conflicting times were handled appropriately. Finally, my last test suite deals with the filter_tasks function which previously did not handle edge cases with mark_test_complete() where pets with a bad ID could crash, or with get_pet_by_ID() could have a missing ID.
+
 - Why were these tests important?
+
+All of these tests are important because they deal with the true purpose of this app. To ensure that the functionality of pawpal+ works, it is important to consider that owners can see their pet's tasks being added to their todo lists for readability, clarity, and so that the app feels useful. In addition, adding test cases for task conflicts, edge cases like bad IDs/missing IDs, case sensitivity, etc ensure that this app has few bugs upon launch.
 
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
 - What edge cases would you test next if you had more time?
+
+I am 5 stars confident! I have 24 tests in my test suite that all pass. If I had more time, I think exploring the priority feature for time conflicts in the schedular would be exciting to see in action!
 
 ---
 
