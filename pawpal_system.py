@@ -177,9 +177,36 @@ class Scheduler:
     def get_todays_schedule(self) -> list[Task]:
         return [t for t in self.get_all_tasks() if t.is_due_today()]
         
-        """Return all tasks sorted in ascending order by their scheduled time."""
+        """Return all tasks sorted in ascending order by their scheduled time (HH:MM string key)."""
     def organize_by_time(self) -> list[Task]:
-        return sorted(self.get_all_tasks(), key=lambda t: t.time)
+        return sorted(self.get_all_tasks(), key=lambda t: t.time.strftime("%H:%M"))
+
+        """Filter tasks by completion status and/or pet name.
+
+        Parameters
+        ----------
+        completed : bool | None
+            If True, return only completed tasks.
+            If False, return only pending tasks.
+            If None (default), do not filter by completion status.
+        pet_name : str | None
+            If provided, return only tasks belonging to the pet with this name
+            (case-insensitive).  If None (default), include tasks for all pets.
+        """
+    def filter_tasks(
+        self,
+        completed: bool | None = None,
+        pet_name: str | None = None,
+    ) -> list[Task]:
+        results: list[Task] = []
+        for pet in self.owner.get_pets():
+            if pet_name is not None and pet.name.lower() != pet_name.lower():
+                continue
+            for task in pet.get_tasks():
+                if completed is not None and task.completed != completed:
+                    continue
+                results.append(task)
+        return results
         
     """Find the task matching task_id across all pets and mark it complete."""
     def mark_task_complete(self, task_id: str) -> None:

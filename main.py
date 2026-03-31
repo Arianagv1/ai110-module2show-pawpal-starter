@@ -59,3 +59,39 @@ for task in plan:
     status = "✓" if task.completed else "○"
     print(f"{task.time.strftime('%H:%M'):<8}  {pet_name:<8}  {status} {task.description}")
 print()
+
+# ---------------------------------------------------------------------------
+# Demonstrate: sort all tasks by time using "HH:MM" string key
+# ---------------------------------------------------------------------------
+print("🕐  All Tasks Sorted by Time (HH:MM)\n")
+print(f"{'Time':<8}  {'Pet':<8}  {'Task'}")
+print("-" * 40)
+for task in scheduler.organize_by_time():
+    pet_name = next(
+        (p.name for p in owner.get_pets() if task in p.tasks),
+        "Unknown",
+    )
+    status = "✓" if task.completed else "○"
+    print(f"{task.time.strftime('%H:%M'):<8}  {pet_name:<8}  {status} {task.description}")
+print()
+
+# ---------------------------------------------------------------------------
+# Demonstrate: filter tasks by pet name
+# ---------------------------------------------------------------------------
+print("🐶  Daisy's Tasks\n")
+for task in scheduler.filter_tasks(pet_name="Daisy"):
+    status = "✓" if task.completed else "○"
+    print(f"  {task.time.strftime('%H:%M')}  {status} {task.description}")
+print()
+
+# ---------------------------------------------------------------------------
+# Demonstrate: filter tasks by completion status (pending only)
+# ---------------------------------------------------------------------------
+print("📋  All Pending Tasks\n")
+for task in scheduler.filter_tasks(completed=False):
+    pet_name = next(
+        (p.name for p in owner.get_pets() if task in p.tasks),
+        "Unknown",
+    )
+    print(f"  {task.time.strftime('%H:%M')}  [{pet_name}]  {task.description}")
+print()
