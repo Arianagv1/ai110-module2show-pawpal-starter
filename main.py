@@ -110,3 +110,26 @@ print("-" * 36)
 for task in scheduler.filter_tasks(completed=False):
     print(f"{task.time.strftime('%H:%M'):<8}  {_pet_name(task):<10}  {task.description}")
 print()
+
+# ---------------------------------------------------------------------------
+# Section 6 — Recurring task auto-creation demo
+# ---------------------------------------------------------------------------
+# mark_task_complete() already ran above for "t1" (Daisy's Morning walk).
+# Because its frequency is "daily", a brand-new Task was automatically added
+# to Daisy's task list with due_date = today + 1 day (timedelta(days=1)).
+# That next occurrence shows up here so you can see the feature in action.
+# ---------------------------------------------------------------------------
+print("🔄  Auto-Created Recurring Tasks  (next occurrences after mark_task_complete)\n")
+print(f"{'New ID':<24}  {'Due Date':<12}  {'Time':<8}  {'Pet':<10}  Task")
+print("-" * 68)
+for pet in owner.get_pets():
+    for task in pet.get_tasks():
+        if task.due_date is not None:          # only auto-scheduled recurrences carry a due_date
+            print(
+                f"{task.task_id:<24}  "
+                f"{task.due_date.strftime('%Y-%m-%d'):<12}  "
+                f"{task.time.strftime('%H:%M'):<8}  "
+                f"{pet.name:<10}  "
+                f"{task.description}"
+            )
+print()

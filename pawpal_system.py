@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import date, time
+from datetime import date, time, timedelta
 # ---------------------------------------------------------------------------
 # Task — represents a single pet care activity
 # ---------------------------------------------------------------------------
@@ -12,6 +12,7 @@ class Task:
         time: time,
         frequency: str,
         completed: bool = False,
+        due_date: date | None = None,
     ):
 
         """Initialise a Task with its id, description, scheduled time, frequency, and completion state."""
@@ -21,6 +22,7 @@ class Task:
         self.time = time
         self.frequency = frequency
         self.completed = completed
+        self.due_date = due_date  # explicit calendar date for the next occurrence (None = unscheduled)
 
         """Mark this task as completed."""
     def mark_complete(self) -> None:
@@ -31,7 +33,14 @@ class Task:
         self.completed = False
 
     def is_due_today(self) -> bool:
-        """Return True for daily tasks or any task scheduled for today."""
+        """Return True if this task is scheduled for today.
+
+        When a specific due_date has been set (e.g. after auto-rescheduling),
+        the task is due only on that exact calendar date.  Otherwise fall back
+        to the old behaviour: daily tasks are always considered due today.
+        """
+        if self.due_date is not None:
+            return self.due_date == date.today()
         return self.frequency.lower() == "daily"
     
         """Return a dictionary containing all fields of this task."""
@@ -42,6 +51,7 @@ class Task:
             "time": self.time,
             "frequency": self.frequency,
             "completed": self.completed,
+            "due_date": self.due_date,
         }
 # ---------------------------------------------------------------------------
 # Pet — stores pet details and a list of tasks
@@ -208,12 +218,39 @@ class Scheduler:
                 results.append(task)
         return results
         
-    """Find the task matching task_id across all pets and mark it complete."""
+    """Find the task matching task_id across all pets and mark it complete.
+
+    For tasks with frequency "daily" or "weekly" a new Task is automatically
+    created and added to the same pet, representing the next occurrence:
+
+    * daily  → due_date = today + 1 day   (timedelta(days=1))
+    * weekly → due_date = today + 7 days  (timedelta(weeks=1))
+
+    The new task's id is derived as  "<original_id>_<YYYYMMDD>"  where the
+    date is the computed next-occurrence date.
+    """
     def mark_task_complete(self, task_id: str) -> None:
-        for task in self.get_all_tasks():
-            if task.task_id == task_id:
-                task.mark_complete()
-                return
+        for pet in self.owner.get_pets():
+            for task in pet.get_tasks():
+                if task.task_id == task_id:
+                    task.mark_complete()
+                    freq = task.frequency.lower()
+                    if freq == "daily":
+                        next_date = date.today() + timedelta(days=1)
+                    elif freq == "weekly":
+                        next_date = date.today() + timedelta(weeks=1)
+                    else:
+                        return  # one-off task — no recurrence needed
+                    new_id = f"{task.task_id}_{next_date.strftime('%Y%m%d')}"
+                    next_task = Task(
+                        new_id,
+                        task.description,
+                        task.time,
+                        task.frequency,
+                        due_date=next_date,
+                    )
+                    pet.add_task(next_task)
+                    return
             
     def generate_daily_plan(self) -> list[Task]:
         """Return today's pending tasks sorted by scheduled time."""
