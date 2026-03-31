@@ -101,3 +101,73 @@ def test_is_due_today_without_due_date_daily():
     """is_due_today() without due_date should return True for daily frequency."""
     task = Task("t1", "Walk", time(7, 0), "daily")
     assert task.is_due_today() is True
+
+
+# ---------------------------------------------------------------------------
+# Conflict detection tests
+# ---------------------------------------------------------------------------
+def _make_owner_with_pets(*pets):
+    """Helper: create an Owner with the given Pet objects and return a Scheduler."""
+    owner = Owner("o99", "Test", "t@example.com")
+    for pet in pets:
+        owner.add_pet(pet)
+    return Scheduler(owner)
+
+
+def test_detect_conflicts_no_conflicts():
+    """detect_conflicts() returns an empty list when all task times are unique."""
+    pet = Pet("p1", "Daisy", "dog", "Shihtzu", date(2020, 3, 15), 10.5, "healthy")
+    pet.add_task(Task("t1", "Walk",      time(7,  0), "daily"))
+    pet.add_task(Task("t2", "Breakfast", time(8,  0), "daily"))
+    pet.add_task(Task("t3", "Dinner",    time(18, 0), "daily"))
+    scheduler = _make_owner_with_pets(pet)
+    assert scheduler.detect_conflicts() == []
+
+
+def test_detect_conflicts_same_pet():
+    """detect_conflicts() flags two tasks for the same pet at the same time."""
+    pet = Pet("p1", "Daisy", "dog", "Shihtzu", date(2020, 3, 15), 10.5, "healthy")
+    pet.add_task(Task("t1", "Walk",    time(7, 0), "daily"))
+    pet.add_task(Task("t2", "Bath",    time(7, 0), "weekly"))  # same time as t1
+    scheduler = _make_owner_with_pets(pet)
+    warnings = scheduler.detect_conflicts()
+    assert len(warnings) == 1
+    assert "07:00" in warnings[0]
+    assert "Daisy" in warnings[0]
+
+
+def test_detect_conflicts_cross_pet():
+    """detect_conflicts() flags tasks from different pets at the same time."""
+    pet1 = Pet("p1", "Daisy", "dog", "Shihtzu",      date(2020, 3, 15), 10.5, "healthy")
+    pet2 = Pet("p2", "Dolly", "cat", "Orange Tabby",  date(2019, 7,  4), 15.2, "healthy")
+    pet1.add_task(Task("t1", "Morning walk",    time(8, 0), "daily"))
+    pet2.add_task(Task("t2", "Feed breakfast",  time(8, 0), "daily"))  # same slot
+    scheduler = _make_owner_with_pets(pet1, pet2)
+    warnings = scheduler.detect_conflicts()
+    assert len(warnings) == 1
+    assert "08:00" in warnings[0]
+    assert "Daisy" in warnings[0]
+    assert "Dolly" in warnings[0]
+
+
+def test_detect_conflicts_multiple_slots():
+    """detect_conflicts() reports every conflicting time slot, not just the first."""
+    pet = Pet("p1", "Daisy", "dog", "Shihtzu", date(2020, 3, 15), 10.5, "healthy")
+    pet.add_task(Task("t1", "Walk A",   time(7,  0), "daily"))
+    pet.add_task(Task("t2", "Walk B",   time(7,  0), "daily"))  # conflict 1
+    pet.add_task(Task("t3", "Bath A",   time(17, 0), "weekly"))
+    pet.add_task(Task("t4", "Bath B",   time(17, 0), "weekly"))  # conflict 2
+    scheduler = _make_owner_with_pets(pet)
+    warnings = scheduler.detect_conflicts()
+    assert len(warnings) == 2
+    assert any("07:00" in w for w in warnings)
+    assert any("17:00" in w for w in warnings)
+
+
+def test_detect_conflicts_returns_list_of_strings():
+    """detect_conflicts() always returns a list (never raises, never returns None)."""
+    owner = Owner("o1", "Empty", "e@example.com")
+    scheduler = Scheduler(owner)
+    result = scheduler.detect_conflicts()
+    assert isinstance(result, list)
+    assert result == []

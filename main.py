@@ -133,3 +133,23 @@ for pet in owner.get_pets():
                 f"{task.description}"
             )
 print()
+
+# ---------------------------------------------------------------------------
+# Section 7 — Schedule conflict detection demo
+# ---------------------------------------------------------------------------
+# Add a task for Daisy at 08:00 — the same slot already used by Dolly's
+# "Feed breakfast" — so that detect_conflicts() has something to flag.
+# A second deliberate clash: give Daisy a bath and an evening walk both at
+# 17:00 (same pet, same time).
+# ---------------------------------------------------------------------------
+Daisy.add_task(Task("t8", "Morning medicine", time(8, 0),  "daily"))   # clashes with Dolly t4
+Daisy.add_task(Task("t9", "Bath time",        time(17, 0), "weekly"))  # clashes with Daisy t3
+
+print("⚠️   Schedule Conflict Detection\n")
+conflicts = scheduler.detect_conflicts()
+if conflicts:
+    for warning in conflicts:
+        print(f"  {warning}")
+else:
+    print("  ✅  No scheduling conflicts found.")
+print()

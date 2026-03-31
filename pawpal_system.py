@@ -252,6 +252,37 @@ class Scheduler:
                     pet.add_task(next_task)
                     return
             
+    def detect_conflicts(self) -> list[str]:
+        """Detect tasks scheduled at the same time across all pets.
+
+        This is a lightweight check: it never raises an exception.  Instead it
+        returns a (possibly empty) list of human-readable warning strings — one
+        per conflicting time slot.  An empty list means the schedule is clean.
+
+        Strategy
+        --------
+        1. Build a dict mapping each scheduled ``time`` value to every
+           ``(pet_name, task)`` pair that shares it.
+        2. Any slot with two or more entries is a conflict.
+        3. Format a warning string for each conflicting slot and collect them.
+        """
+        time_map: dict[time, list[tuple[str, Task]]] = {}
+        for pet in self.owner.get_pets():
+            for task in pet.get_tasks():
+                time_map.setdefault(task.time, []).append((pet.name, task))
+
+        warnings: list[str] = []
+        for slot_time, entries in sorted(time_map.items()):
+            if len(entries) > 1:
+                details = ", ".join(
+                    f"{pet_name} → {task.description}"
+                    for pet_name, task in entries
+                )
+                warnings.append(
+                    f"⚠️  Conflict at {slot_time.strftime('%H:%M')}: {details}"
+                )
+        return warnings
+
     def generate_daily_plan(self) -> list[Task]:
         """Return today's pending tasks sorted by scheduled time."""
         return sorted(
