@@ -48,13 +48,22 @@ My schedular currently uses a linear search for every task lookup. For a robust 
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+
+I used copilot and claude!
+
 - What kinds of prompts or questions were most helpful?
+
+Following the prompts from the codepath's instructions gave me clear directions for what the app's next step was. I appreciated having step by step guidance, and it definetly helped navigate creating this project from ground up independently. 
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+
+I did not like a couple of the first skeletons that the AI gave me from my UML. 
+
 - How did you evaluate or verify what the AI suggested?
 
+I realized that my UML had a lot of unecessary functions, some of which felt redundant with others in the same class and could actually result in bottlenecks down the line. I verified the owner-pet relationships, pet identification with task and schedular classes, as these bottlenecks, for which claude helped me navigate using a different constructor and added getter methods. 
 ---
 
 ## 4. Testing and Verification
@@ -82,11 +91,15 @@ I am 5 stars confident! I have 24 tests in my test suite that all pass. If I had
 **a. What went well**
 
 - What part of this project are you most satisfied with?
-
+Looking at the streamlit app, I am very satisfied with the simplicity and the straightforwardness of the application. I think it accomplishes its goals clearly, and I learned a lot about how to implement three kinds of algorithms, UML diagrams, and prompt engineering.
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
 
+If I had more time, I would add the priority/preference constraints for schedular. Seeing schedular manage my tasks with time conflicts was interesting, however, I think adding more constraints would make the app feel more robust and easier to work with for real-world problems. I think a little more UI to make the app feel engaging would have been interesting too.
+
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+
+I learned the value of identifying the right level of abstraction early. Building a Scheduler class that handles all the logic — sorting, filtering, conflict detection, recurrence — kept Pet and Task simple and reusable. Separating what data is from what the system does with it made everything easier to test and extend.
