@@ -28,13 +28,19 @@ Copilot analyzed that there are missing relationships between certain classes. T
 **a. Constraints and priorities**
 
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
+
+My schedular only considers time right now as a constraint, but adding more constraints would be interesting! Like adding a preference for walks instead of feeding for example for conflicting tasks.
+
 - How did you decide which constraints mattered most?
+
+To me, schedular had to prioritize events which had time conflicts, since this would probably be more common, and using preferences/priority could be solutions to this problem. Fortunately, the AI suggested to do warnings, which with more implementation I think a priority algorithm would be very interesting.
 
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
+My schedular currently uses a linear search for every task lookup. For a robust app, this tradeoff is code simplicity over raw performance. This tradeoff is reasonable since this project is an introduction in using these algorithms. 
 ---
 
 ## 3. AI Collaboration
