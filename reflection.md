@@ -1,5 +1,45 @@
 # PawPal+ Project Reflection
 
+---
+
+## 6. Reflection and Ethics: Thinking Critically About My AI
+
+### Limitations and Biases in the System
+
+PawPal+'s RAG system retrieves answers from a knowledge base I wrote, which means its "knowledge" is only as complete and unbiased as what I put into it. Right now the knowledge base covers dogs and cats, and within dogs it has breed-specific guidance for Golden Retrievers and German Shepherds only. An owner with a Dachshund, a Persian cat, or a rabbit would get generic responses or no breed-specific suggestions at all — the system would silently fall back to general guidelines without warning the user that it lacks specific knowledge for their pet.
+
+The health concern analysis has a more serious bias: it only recognizes three symptom categories (lethargy, vomiting, ear issues). Any concern that doesn't contain those exact keywords — "my dog isn't acting like himself," "she's been hiding under the bed," "he's drinking a lot of water" — returns a `"monitor"` urgency with no recommended actions. The system appears to respond but gives the user nothing useful. That's a form of false confidence: the app looks like it analyzed the concern when it actually didn't.
+
+There is also a weight-based bias in the exercise suggestions. The system classifies dogs over 50 kg as "large breed" needing 60+ minutes of exercise, and all others as needing 30–45 minutes. A 6 kg Chihuahua and a 40 kg Labrador get the same suggestion, which is incorrect. Weight alone is a poor proxy for exercise needs — breed energy level, age, and health status all matter more.
+
+---
+
+### Could the System Be Misused, and How Would I Prevent It?
+
+The most realistic misuse is over-reliance. A user who types "my cat is vomiting blood" and receives a `"monitor"` urgency (because the keyword matching only catches "vomiting," not the severity context) might delay going to a vet. The system was never designed to replace veterinary advice, but nothing in the current UI makes that boundary explicit.
+
+To prevent this I would add a persistent disclaimer on the health monitoring tab — something like "This tool is not a substitute for professional veterinary advice. If your pet is in distress, contact a vet immediately." I would also add a hard override: any concern containing words like "blood," "seizure," "not breathing," or "unconscious" should immediately return a `"high"` urgency with a single action — call a vet now — regardless of what the knowledge base returns.
+
+A secondary misuse risk is data privacy. The app stores pet names, health statuses, and owner emails in Streamlit session state, which resets on refresh but could be logged by a deployed server. If this app were hosted publicly, I would not collect real personal information without a clear privacy policy and proper data storage practices.
+
+---
+
+### What Surprised Me While Testing Reliability
+
+The biggest surprise was how confidently the system returns a result even when it has no real information to give. When I tested a health concern like "Whiskers has been hiding under the bed," the system returned an urgency color, an empty recommended actions list, and no warning signs — formatted exactly like a real response. There was no indication to the user that nothing matched. I had assumed an AI system would either give a good answer or say it didn't know. I did not expect it to give a well-formatted non-answer that looked authoritative.
+
+The duplicate suggestion logic also behaved unexpectedly. The deduplication check looks for whether an existing task description is contained in the suggestion description using substring matching. In testing, a pet with an existing task called "Feeding" caused the system to suppress a suggestion called "Dog feeding - twice daily" because `"feeding"` appeared in both strings. That's overly aggressive — the existing task was one word, the suggestion was a full scheduled recommendation. The filter intended to help ended up silently removing valid suggestions.
+
+---
+
+### AI Collaboration: One Helpful Suggestion, One Flawed One
+
+**Helpful:** When the conflict resolution UI crashed with `StreamlitAPIException: Expanders may not be nested inside other expanders`, Claude identified the root cause immediately — Streamlit's layout engine does not allow an `st.expander` inside another `st.expander` — and suggested replacing the inner expanders with `st.container(border=True)`. This was genuinely useful because the error message alone didn't make it obvious what the fix should be, and the suggestion preserved the visual structure of the UI without requiring a redesign.
+
+**Flawed:** Early in the project, the AI suggested `chroma-client==0.4.0` as the ChromaDB package name in `requirements.txt`. This package does not exist on PyPI — the correct name is `chromadb`. Running `pip install -r requirements.txt` failed immediately with `No matching distribution found`. The AI had either hallucinated the package name or confused it with an internal or deprecated alias. This was a good reminder that AI suggestions about specific library names and version numbers should always be verified against the actual package index (pypi.org) before trusting them, especially for newer or rapidly changing libraries like ChromaDB.
+
+---
+
 ## 1. System Design
 
 **a. Initial design**
